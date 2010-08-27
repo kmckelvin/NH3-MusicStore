@@ -9,7 +9,7 @@ namespace MvcMusicStore.Controllers
     [Authorize]
     public class CheckoutController : Controller
     {
-        MusicStoreEntities storeDB = new MusicStoreEntities();
+        private IMusicStoreContext storeDB;// = new MusicStoreEntities();
         const string PromoCode = "FREE";
 
         //

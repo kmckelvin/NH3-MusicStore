@@ -10,5 +10,6 @@ namespace MvcMusicStore.Models
         IQueryable<Artist> Artists { get; }
         IQueryable<Cart> Carts { get; }
         IQueryable<Genre> Genres { get; }
+        IQueryable<Order> Orders { get; }
     }
 }
