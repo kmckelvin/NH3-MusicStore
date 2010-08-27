@@ -1,0 +1,21 @@
+syntax: glob
+
+*.suo
+*.csproj.*
+*.[Rr]e[Ss]harper.user
+*.*scc
+_[Rr]e[Ss]harper.*/
+[Bb]in/
+[Dd]ebug/
+[Pp]ublish/
+[Oo]bj/
+[Rr]elease/
+[Tt]humbs.db
+TestResult.xml
+[Bb]uild/
+*.zip
+*TemporaryKey*.pfx
+PartCover/
+ProfilingSessions/
+/*.exe
+*.swp
