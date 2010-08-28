@@ -1,9 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Web;
 using System.Web.Mvc;
 using System.Web.Routing;
+using MvcMusicStore.Models;
+using NHibernate;
+using NHibernate.ByteCode.Castle;
+using NHibernate.Cfg;
+using NHibernate.Cfg.Loquacious;
+using NHibernate.Context;
+using NHibernate.Dialect;
 
 namespace MvcMusicStore
 {
@@ -12,6 +18,41 @@ namespace MvcMusicStore
 
     public class MvcApplication : System.Web.HttpApplication
     {
+        private static ISessionFactory SessionFactory = CreateSessionFactory();
+
+        private static ISessionFactory CreateSessionFactory()
+        {
+            var config = new Configuration();
+
+            config.DataBaseIntegration(
+                db =>
+                    {
+                        db.ConnectionStringName = "MusicStoreConnection";
+                        db.Dialect<MsSql2005Dialect>();
+                    })
+                .Proxy(p => p.ProxyFactoryFactory<ProxyFactoryFactory>())
+                .AddAssembly(typeof (Album).Assembly);
+
+            return config.BuildSessionFactory();
+        }
+
+        public static IMusicStoreContext GetCurrentRequestContext()
+        {
+            // get the ISession bound to the current session
+            var currentSession = SessionFactory.GetCurrentSession();
+
+            // build a context object to wrap it
+            var context = new MusicStoreContext(currentSession);
+
+            return context;
+        }
+
+        public MvcApplication()
+        {
+            BeginRequest += (o, e) => CurrentSessionContext.Bind(SessionFactory.OpenSession());
+            EndRequest += (o, e) => CurrentSessionContext.Unbind(SessionFactory);
+        }
+
         public static void RegisterRoutes(RouteCollection routes)
         {
             routes.IgnoreRoute("{resource}.axd/{*pathInfo}");
