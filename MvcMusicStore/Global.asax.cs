@@ -38,7 +38,7 @@ namespace MvcMusicStore
 
         public static IMusicStoreContext GetCurrentRequestContext()
         {
-            // get the ISession bound to the current session
+            // get the ISession bound to the current request
             var currentSession = SessionFactory.GetCurrentSession();
 
             // build a context object to wrap it
