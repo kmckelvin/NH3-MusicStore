@@ -20,117 +20,140 @@ namespace MvcMusicStore.Models
 
         public void AddToCart(Album album)
         {
-            var cartItem = storeDB.Carts.SingleOrDefault(
-                c => c.CartId == shoppingCartId && 
-                c.AlbumId == album.AlbumId);
-
-            if (cartItem == null)
+            using (var tx = storeDB.Session.BeginTransaction())
             {
-                // Create a new cart item
-                cartItem = new Cart
+                var cartItem = storeDB.Carts.SingleOrDefault(
+                    c => c.CartId == shoppingCartId &&
+                         c.Album == album);
+
+                if (cartItem == null)
                 {
-                    AlbumId = album.AlbumId,
-                    CartId = shoppingCartId,
-                    Count = 1,
-                    DateCreated = DateTime.Now
-                };
-                storeDB.AddToCarts(cartItem);
-            }
-            else
-            {
-                // Add one to the quantity
-                cartItem.Count++;
-            }
+                    // Create a new cart item
+                    cartItem = new Cart
+                                   {
+                                       Album = album,
+                                       CartId = shoppingCartId,
+                                       Count = 1,
+                                       DateCreated = DateTime.Now
+                                   };
+                }
+                else
+                {
+                    // Add one to the quantity
+                    cartItem.Count++;
+                }
 
-            // Save it
-            storeDB.SaveChanges();
+                // Save it
+                storeDB.Session.Save(cartItem);
+
+                tx.Commit();
+            }
         }
 
         public void RemoveFromCart(int id)
         {
-            //Get the cart
-            var cartItem = storeDB.Carts.Single(
-                cart => cart.CartId == shoppingCartId 
-                && cart.RecordId == id);
-
-            if (cartItem != null)
+            using (var tx = storeDB.Session.BeginTransaction())
             {
-                if (cartItem.Count > 1)
+                //Get the cart
+                var cartItem = storeDB.Carts.Single(
+                    cart => cart.CartId == shoppingCartId
+                            && cart.RecordId == id);
+
+                if (cartItem != null)
                 {
-                    cartItem.Count--;
+                    if (cartItem.Count > 1)
+                    {
+                        cartItem.Count--;
+                        storeDB.Session.Save(cartItem);
+                    }
+                    else
+                    {
+                        storeDB.Session.Delete(cartItem);
+                    }
                 }
-                else
-                {
-                    storeDB.Carts.DeleteObject(cartItem);
-                }
-                storeDB.SaveChanges();
+
+                tx.Commit();
             }
         }
 
         public void EmptyCart()
         {
-            var cartItems = storeDB.Carts
-                .Where(cart => cart.CartId == shoppingCartId);
-
-            foreach (var cartItem in cartItems)
+            using (var tx = storeDB.Session.BeginTransaction())
             {
-                storeDB.DeleteObject(cartItem);
-            }
+                var cartItems = storeDB.Carts
+                    .Where(cart => cart.CartId == shoppingCartId);
 
-            storeDB.SaveChanges();
+                foreach (var cartItem in cartItems)
+                {
+                    storeDB.Session.Delete(cartItem);
+                }
+
+                tx.Commit();
+            }
         }
 
-        public List<Cart> GetCartItems()
+        public IQueryable<Cart> GetCartItems()
         {
-            var cartItems = (from cart in storeDB.Carts
-                             where cart.CartId == shoppingCartId
-                             select cart).ToList();
+            var cartItems = from cart in storeDB.Carts
+                            where cart.CartId == shoppingCartId
+                            select cart;
+
             return cartItems;
         }
 
         public int GetCount()
         {
-            int? count = (from cartItems in storeDB.Carts
-                          where cartItems.CartId == shoppingCartId
-                          select (int?)cartItems.Count).Sum();
+            using (var tx = storeDB.Session.BeginTransaction())
+            {
+                int? count = (from cartItems in storeDB.Carts
+                              where cartItems.CartId == shoppingCartId
+                              select (int?) cartItems.Count).Sum();
 
-            return count ?? 0;
+                tx.Commit();
+
+                return count ?? 0;
+            }
         }
 
         public decimal GetTotal()
         {
-            decimal? total = 
-                (from cartItems in storeDB.Carts
-                where cartItems.CartId == shoppingCartId
-                select (int?)cartItems.Count * cartItems.Album.Price)
-                .Sum();
+            using (var tx = storeDB.Session.BeginTransaction())
+            {
+                decimal? total =
+                    (from cartItems in storeDB.Carts
+                     where cartItems.CartId == shoppingCartId
+                     select (int?) cartItems.Count*cartItems.Album.Price)
+                        .Sum();
 
-            return total ?? decimal.Zero;
+                tx.Commit();
+
+                return total ?? decimal.Zero;
+            }
         }
 
         public int CreateOrder(Order order)
         {
-            decimal orderTotal = 0;
-
-            var cartItems = GetCartItems();
-
-            //Iterate the items in the cart, adding Order Details for each
-            foreach (var cartItem in cartItems)
+            using (var tx = storeDB.Session.BeginTransaction())
             {
-                var orderDetails = new OrderDetail
+                var cartItems = GetCartItems();
+
+                //Iterate the items in the cart, adding Order Details for each
+                foreach (var cartItem in cartItems)
                 {
-                    AlbumId = cartItem.AlbumId,
-                    OrderId = order.OrderId,
-                    UnitPrice = cartItem.Album.Price
-                };
+                    var orderDetail = new OrderDetail
+                                          {
+                                              Album = cartItem.Album,
+                                              Order = order,
+                                              UnitPrice = cartItem.Album.Price
+                                          };
 
-                storeDB.OrderDetails.AddObject(orderDetails);
+                    order.OrderDetails.Add(orderDetail);
+                }
 
-                orderTotal += (cartItem.Count * cartItem.Album.Price);
+                //Save the order
+                storeDB.Session.Save(order);
+                tx.Commit();
             }
-
-            //Save the order
-            storeDB.SaveChanges();
 
             //Empty the shopping cart
             EmptyCart();
@@ -144,9 +167,9 @@ namespace MvcMusicStore.Models
         {
             if (context.Session[CartSessionKey] == null)
             {
-                if (!string.IsNullOrWhiteSpace(context.User.Identity.Name))
+                if (!string.IsNullOrEmpty(context.User.Identity.Name))
                 {
-                    // User is logged in, associate the cart with there username
+                    // User is logged in, associate the cart with their username
                     context.Session[CartSessionKey] = context.User.Identity.Name;
                 }
                 else
@@ -165,14 +188,18 @@ namespace MvcMusicStore.Models
         // be associated with their username
         public void MigrateCart(string userName)
         {
-            var shoppingCart = storeDB.Carts
-                .Where(c => c.CartId == shoppingCartId);
-
-            foreach (Cart item in shoppingCart)
+            using (var tx = storeDB.Session.BeginTransaction())
             {
-                item.CartId = userName;
+                var shoppingCart = storeDB.Carts
+                    .Where(c => c.CartId == shoppingCartId);
+
+                foreach (Cart item in shoppingCart)
+                {
+                    item.CartId = userName;
+                }
+
+                tx.Commit();
             }
-            storeDB.SaveChanges();
         }
     }
 }
