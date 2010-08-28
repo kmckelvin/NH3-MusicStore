@@ -4,6 +4,7 @@ using System.Linq;
 using System.Web;
 using System.Web.Mvc;
 using System.Web.Routing;
+using MvcMusicStore.Infrastructure;
 using MvcMusicStore.Models;
 using NHibernate;
 using NHibernate.ByteCode.Castle;
@@ -84,7 +85,7 @@ namespace MvcMusicStore
 
         protected override IKernel CreateKernel()
         {
-            return 
+            return new StandardKernel(new MusicStoreNinjectModule());
         }
     }
 }

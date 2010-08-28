@@ -9,7 +9,12 @@ namespace MvcMusicStore.Controllers
 {
     public class ShoppingCartController : Controller
     {
-        private IMusicStoreContext storeDB;// = new MusicStoreEntities();
+        private IMusicStoreContext storeContext;
+
+        public ShoppingCartController(IMusicStoreContext storeContext)
+        {
+            this.storeContext = storeContext;
+        }
 
         //
         // GET: /ShoppingCart/
@@ -36,7 +41,7 @@ namespace MvcMusicStore.Controllers
         {
 
             // Retrieve the album from the database
-            var addedAlbum = storeDB.Albums
+            var addedAlbum = storeContext.Albums
                 .Single(album => album.AlbumId == id);
 
             // Add it to the shopping cart
@@ -58,7 +63,7 @@ namespace MvcMusicStore.Controllers
             var cart = ShoppingCart.GetCart(this.HttpContext);
 
             // Get the name of the album to display confirmation
-            string albumName = storeDB.Carts
+            string albumName = storeContext.Carts
                 .Single(item => item.RecordId == id).Album.Title;
 
             // Remove from cart. Note that for simplicity, we're 

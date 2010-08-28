@@ -5,24 +5,29 @@ using System.Web;
 
 namespace MvcMusicStore.Models
 {
-    public partial class ShoppingCart
+    public class ShoppingCart
     {
-        private IMusicStoreContext storeDB;
+        private IMusicStoreContext storeContext;
         string shoppingCartId { get; set; }
         public const string CartSessionKey = "CartId";
 
-        public static ShoppingCart GetCart(HttpContextBase context)
+        public static ShoppingCart GetCart(HttpContextBase httpContext, IMusicStoreContext storeContext)
         {
-            var cart = new ShoppingCart();
-            cart.shoppingCartId = cart.GetCartId(context);
+            var cart = new ShoppingCart(storeContext);
+            cart.shoppingCartId = cart.GetCartId(httpContext);
             return cart;
+        }
+
+        private ShoppingCart(IMusicStoreContext storeContext)
+        {
+            this.storeContext = storeContext;
         }
 
         public void AddToCart(Album album)
         {
-            using (var tx = storeDB.Session.BeginTransaction())
+            using (var tx = storeContext.Session.BeginTransaction())
             {
-                var cartItem = storeDB.Carts.SingleOrDefault(
+                var cartItem = storeContext.Carts.SingleOrDefault(
                     c => c.CartId == shoppingCartId &&
                          c.Album == album);
 
@@ -44,7 +49,7 @@ namespace MvcMusicStore.Models
                 }
 
                 // Save it
-                storeDB.Session.Save(cartItem);
+                storeContext.Session.Save(cartItem);
 
                 tx.Commit();
             }
@@ -52,10 +57,10 @@ namespace MvcMusicStore.Models
 
         public void RemoveFromCart(int id)
         {
-            using (var tx = storeDB.Session.BeginTransaction())
+            using (var tx = storeContext.Session.BeginTransaction())
             {
                 //Get the cart
-                var cartItem = storeDB.Carts.Single(
+                var cartItem = storeContext.Carts.Single(
                     cart => cart.CartId == shoppingCartId
                             && cart.RecordId == id);
 
@@ -64,11 +69,11 @@ namespace MvcMusicStore.Models
                     if (cartItem.Count > 1)
                     {
                         cartItem.Count--;
-                        storeDB.Session.Save(cartItem);
+                        storeContext.Session.Save(cartItem);
                     }
                     else
                     {
-                        storeDB.Session.Delete(cartItem);
+                        storeContext.Session.Delete(cartItem);
                     }
                 }
 
@@ -78,14 +83,14 @@ namespace MvcMusicStore.Models
 
         public void EmptyCart()
         {
-            using (var tx = storeDB.Session.BeginTransaction())
+            using (var tx = storeContext.Session.BeginTransaction())
             {
-                var cartItems = storeDB.Carts
+                var cartItems = storeContext.Carts
                     .Where(cart => cart.CartId == shoppingCartId);
 
                 foreach (var cartItem in cartItems)
                 {
-                    storeDB.Session.Delete(cartItem);
+                    storeContext.Session.Delete(cartItem);
                 }
 
                 tx.Commit();
@@ -94,7 +99,7 @@ namespace MvcMusicStore.Models
 
         public IQueryable<Cart> GetCartItems()
         {
-            var cartItems = from cart in storeDB.Carts
+            var cartItems = from cart in storeContext.Carts
                             where cart.CartId == shoppingCartId
                             select cart;
 
@@ -103,9 +108,9 @@ namespace MvcMusicStore.Models
 
         public int GetCount()
         {
-            using (var tx = storeDB.Session.BeginTransaction())
+            using (var tx = storeContext.Session.BeginTransaction())
             {
-                int? count = (from cartItems in storeDB.Carts
+                int? count = (from cartItems in storeContext.Carts
                               where cartItems.CartId == shoppingCartId
                               select (int?) cartItems.Count).Sum();
 
@@ -117,10 +122,10 @@ namespace MvcMusicStore.Models
 
         public decimal GetTotal()
         {
-            using (var tx = storeDB.Session.BeginTransaction())
+            using (var tx = storeContext.Session.BeginTransaction())
             {
                 decimal? total =
-                    (from cartItems in storeDB.Carts
+                    (from cartItems in storeContext.Carts
                      where cartItems.CartId == shoppingCartId
                      select (int?) cartItems.Count*cartItems.Album.Price)
                         .Sum();
@@ -133,7 +138,7 @@ namespace MvcMusicStore.Models
 
         public int CreateOrder(Order order)
         {
-            using (var tx = storeDB.Session.BeginTransaction())
+            using (var tx = storeContext.Session.BeginTransaction())
             {
                 var cartItems = GetCartItems();
 
@@ -151,7 +156,7 @@ namespace MvcMusicStore.Models
                 }
 
                 //Save the order
-                storeDB.Session.Save(order);
+                storeContext.Session.Save(order);
                 tx.Commit();
             }
 
@@ -188,9 +193,9 @@ namespace MvcMusicStore.Models
         // be associated with their username
         public void MigrateCart(string userName)
         {
-            using (var tx = storeDB.Session.BeginTransaction())
+            using (var tx = storeContext.Session.BeginTransaction())
             {
-                var shoppingCart = storeDB.Carts
+                var shoppingCart = storeContext.Carts
                     .Where(c => c.CartId == shoppingCartId);
 
                 foreach (Cart item in shoppingCart)

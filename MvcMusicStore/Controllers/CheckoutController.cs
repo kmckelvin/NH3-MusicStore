@@ -2,15 +2,19 @@
 using System.Linq;
 using System.Web.Mvc;
 using MvcMusicStore.Models;
-using MvcMusicStore.ViewModels;
 
 namespace MvcMusicStore.Controllers
 {
     [Authorize]
     public class CheckoutController : Controller
     {
-        private IMusicStoreContext storeDB;// = new MusicStoreEntities();
+        private IMusicStoreContext storeContext;
         const string PromoCode = "FREE";
+
+        public CheckoutController(IMusicStoreContext storeContext)
+        {
+            this.storeContext = storeContext;
+        }
 
         //
         // GET: /Checkout/AddressAndPayment
@@ -42,8 +46,8 @@ namespace MvcMusicStore.Controllers
                     order.OrderDate = DateTime.Now;
 
                     //Save Order
-                    storeDB.AddToOrders(order);
-                    storeDB.SaveChanges();
+                    storeContext.AddToOrders(order);
+                    storeContext.SaveChanges();
 
                     //Process the order
                     var cart = ShoppingCart.GetCart(this.HttpContext);
@@ -67,7 +71,7 @@ namespace MvcMusicStore.Controllers
         public ActionResult Complete(int id)
         {
             // Validate customer owns this order
-            bool isValid = storeDB.Orders.Any(
+            bool isValid = storeContext.Orders.Any(
                 o => o.OrderId == id &&
                 o.Username == User.Identity.Name);
 

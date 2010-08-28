@@ -7,7 +7,12 @@ namespace MvcMusicStore.Controllers
 {
     public class StoreController : Controller
     {
-        private IMusicStoreContext storeDB;// = new MusicStoreEntities();
+        private IMusicStoreContext storeContext;
+
+        public StoreController(IMusicStoreContext storeContext)
+        {
+            this.storeContext = storeContext;
+        }
 
         //
         // GET: /Store/
@@ -15,7 +20,7 @@ namespace MvcMusicStore.Controllers
         public ActionResult Index()
         {
             // Retrieve list of Genres from database
-            var genres = from genre in storeDB.Genres
+            var genres = from genre in storeContext.Genres
                          select genre.Name;
 
             // Set up our ViewModel
@@ -35,7 +40,7 @@ namespace MvcMusicStore.Controllers
         public ActionResult Browse(string genre)
         {
             // Retrieve Genre from database
-            var genreModel = storeDB.Genres.Include("Albums")
+            var genreModel = storeContext.Genres.Include("Albums")
                 .Single(g => g.Name == genre);
 
             var viewModel = new StoreBrowseViewModel()
@@ -52,7 +57,7 @@ namespace MvcMusicStore.Controllers
 
         public ActionResult Details(int id)
         {
-            var album = storeDB.Albums
+            var album = storeContext.Albums
                 .Single(a => a.AlbumId == id);
 
             return View(album);
@@ -64,7 +69,7 @@ namespace MvcMusicStore.Controllers
         [ChildActionOnly]
         public ActionResult GenreMenu()
         {
-            var genres = storeDB.Genres.ToList();
+            var genres = storeContext.Genres.ToList();
 
             return View(genres);
         }

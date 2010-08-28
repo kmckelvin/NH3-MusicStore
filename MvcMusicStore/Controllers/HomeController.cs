@@ -10,7 +10,12 @@ namespace MvcMusicStore.Controllers
         //
         // GET: /Home/
 
-        private IMusicStoreContext storeDB;// = new MusicStoreEntities();
+        private IMusicStoreContext storeContext;
+
+        public HomeController(IMusicStoreContext storeContext)
+        {
+            this.storeContext = storeContext;
+        }
 
         public ActionResult Index()
         {
@@ -25,7 +30,7 @@ namespace MvcMusicStore.Controllers
             // Group the order details by album and return
             // the albums with the highest count
 
-            return storeDB.Albums
+            return storeContext.Albums
                 .OrderByDescending(a => a.OrderDetails.Count())
                 .Take(count)
                 .ToList();
