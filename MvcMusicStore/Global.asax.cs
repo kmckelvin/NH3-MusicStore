@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Web;
 using System.Web.Mvc;
@@ -10,13 +11,16 @@ using NHibernate.Cfg;
 using NHibernate.Cfg.Loquacious;
 using NHibernate.Context;
 using NHibernate.Dialect;
+using Ninject;
+using Ninject.Modules;
+using Ninject.Web.Mvc;
 
 namespace MvcMusicStore
 {
     // Note: For instructions on enabling IIS6 or IIS7 classic mode, 
     // visit http://go.microsoft.com/?LinkId=9394801
 
-    public class MvcApplication : System.Web.HttpApplication
+    public class MvcApplication : NinjectHttpApplication
     {
         private static ISessionFactory SessionFactory = CreateSessionFactory();
 
@@ -76,6 +80,11 @@ namespace MvcMusicStore
             AreaRegistration.RegisterAllAreas();
 
             RegisterRoutes(RouteTable.Routes);
+        }
+
+        protected override IKernel CreateKernel()
+        {
+            return 
         }
     }
 }
