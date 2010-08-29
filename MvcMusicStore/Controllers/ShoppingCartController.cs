@@ -21,12 +21,12 @@ namespace MvcMusicStore.Controllers
 
         public ActionResult Index()
         {
-            var cart = ShoppingCart.GetCart(this.HttpContext);
+            var cart = ShoppingCart.GetCart(this.HttpContext, storeContext);
 
             // Set up our ViewModel
             var viewModel = new ShoppingCartViewModel
             {
-                CartItems = cart.GetCartItems(),
+                CartItems = cart.GetCartItems().ToList(),
                 CartTotal = cart.GetTotal()
             };
 
@@ -45,7 +45,7 @@ namespace MvcMusicStore.Controllers
                 .Single(album => album.AlbumId == id);
 
             // Add it to the shopping cart
-            var cart = ShoppingCart.GetCart(this.HttpContext);
+            var cart = ShoppingCart.GetCart(this.HttpContext, storeContext);
 
             cart.AddToCart(addedAlbum);
 
@@ -60,7 +60,7 @@ namespace MvcMusicStore.Controllers
         public ActionResult RemoveFromCart(int id)
         {
             // Remove the item from the cart
-            var cart = ShoppingCart.GetCart(this.HttpContext);
+            var cart = ShoppingCart.GetCart(this.HttpContext, storeContext);
 
             // Get the name of the album to display confirmation
             string albumName = storeContext.Carts
@@ -88,7 +88,7 @@ namespace MvcMusicStore.Controllers
         [ChildActionOnly]
         public ActionResult CartSummary()
         {
-            var cart = ShoppingCart.GetCart(this.HttpContext);
+            var cart = ShoppingCart.GetCart(this.HttpContext, storeContext);
 
             ViewData["CartCount"] = cart.GetCount();
 

@@ -40,7 +40,7 @@ namespace MvcMusicStore.Controllers
         public ActionResult Browse(string genre)
         {
             // Retrieve Genre from database
-            var genreModel = storeContext.Genres.Include("Albums")
+            var genreModel = storeContext.Genres // TODO: Eager load Albums
                 .Single(g => g.Name == genre);
 
             var viewModel = new StoreBrowseViewModel()

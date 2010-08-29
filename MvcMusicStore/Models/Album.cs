@@ -1,4 +1,6 @@
-﻿namespace MvcMusicStore.Models
+﻿using System.Collections.Generic;
+
+namespace MvcMusicStore.Models
 {
     public class Album
     {
@@ -8,5 +10,7 @@
         public virtual string Title { get; set; }
         public virtual decimal Price { get; set; }
         public virtual string AlbumArtUrl { get; set; }
+
+        public virtual ICollection<OrderDetail> OrderDetails { get; set; }
     }
 }

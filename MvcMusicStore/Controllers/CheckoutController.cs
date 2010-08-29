@@ -46,11 +46,10 @@ namespace MvcMusicStore.Controllers
                     order.OrderDate = DateTime.Now;
 
                     //Save Order
-                    storeContext.AddToOrders(order);
-                    storeContext.SaveChanges();
+                    storeContext.Session.Save(order);
 
                     //Process the order
-                    var cart = ShoppingCart.GetCart(this.HttpContext);
+                    var cart = ShoppingCart.GetCart(this.HttpContext, storeContext);
                     cart.CreateOrder(order);
 
                     return RedirectToAction("Complete", 

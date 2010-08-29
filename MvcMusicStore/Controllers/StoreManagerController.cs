@@ -21,9 +21,7 @@ namespace MvcMusicStore.Controllers
 
         public ActionResult Index()
         {
-            var albums = storeContext.Albums
-                .Include("Genre").Include("Artist")
-                .ToList();
+            // TODO: Eager-load the genres and artists here.
 
             return View(storeContext.Albums);
         }
@@ -52,8 +50,12 @@ namespace MvcMusicStore.Controllers
             try
             {
                 //Save Album
-                storeContext.AddToAlbums(album);
-                storeContext.SaveChanges();
+                using (var tx = storeContext.Session.BeginTransaction())
+                {
+                    storeContext.Session.Save(album);
+
+                    tx.Commit();
+                }
 
                 return Redirect("/");
             }
@@ -95,25 +97,37 @@ namespace MvcMusicStore.Controllers
         {
             var album = storeContext.Albums.Single(a => a.AlbumId == id);
 
-            try
+            using (var tx = storeContext.Session.BeginTransaction())
             {
-                //Save Album
-
-                UpdateModel(album, "Album");
-                storeContext.SaveChanges();
-
-                return RedirectToAction("Index");
-            }
-            catch
-            {
-                var viewModel = new StoreManagerViewModel
+                try
                 {
-                    Album = album,
-                    Genres = storeContext.Genres.ToList(),
-                    Artists = storeContext.Artists.ToList()
-                };
+                    //Save Album
 
-                return View(viewModel);
+                    UpdateModel(album, "Album");
+                    storeContext.Session.Save(album);
+                    
+                    tx.Commit();
+                    return RedirectToAction("Index");
+                }
+                catch
+                {
+                    var viewModel = new StoreManagerViewModel
+                                        {
+                                            Album = album,
+                                            Genres = storeContext.Genres.ToList(),
+                                            Artists = storeContext.Artists.ToList()
+                                        };
+
+                    return View(viewModel);
+                }
+                finally
+                {
+                    // ensure the transaction is committed
+                    if (tx != null && tx.WasCommitted == false)
+                    {
+                        tx.Commit();
+                    }
+                }
             }
         }
 
@@ -133,16 +147,24 @@ namespace MvcMusicStore.Controllers
         [HttpPost]
         public ActionResult Delete(int id, string confirmButton)
         {
-            var album = storeContext.Albums
-                .Include("OrderDetails").Include("Carts")
-                .Single(a => a.AlbumId == id);
+            using (var tx = storeContext.Session.BeginTransaction())
+            {
+                var album = storeContext.Albums.Single(a => a.AlbumId == id);
 
-            // For simplicity, we're allowing deleting of albums 
-            // with existing orders We've set up OnDelete = Cascade 
-            // on the Album->OrderDetails and Album->Carts relationships
+                // -- comment from the EF4 based MVC Music Store
+                // For simplicity, we're allowing deleting of albums 
+                // with existing orders We've set up OnDelete = Cascade 
+                // on the Album->OrderDetails and Album->Carts relationships
+                // -- end
 
-            storeContext.DeleteObject(album);
-            storeContext.SaveChanges();
+                // Using NHibernate we have a similar feature, we set the
+                // cascade="all-delete-orphans" on Album.OrderDetails and
+                // on Album.Carts to delete existing orders.
+
+                storeContext.Session.Delete(album);
+
+                tx.Commit();
+            }
 
             return View("Deleted");
         }
