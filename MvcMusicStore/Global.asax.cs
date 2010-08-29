@@ -36,6 +36,7 @@ namespace MvcMusicStore
                         db.Dialect<MsSql2005Dialect>();
                     })
                 .Proxy(p => p.ProxyFactoryFactory<ProxyFactoryFactory>())
+                .SetProperty(NHibernate.Cfg.Environment.CurrentSessionContextClass, "web")
                 .AddAssembly(typeof (Album).Assembly);
 
             return config.BuildSessionFactory();
@@ -76,7 +77,7 @@ namespace MvcMusicStore
 
         }
 
-        protected void Application_Start()
+        protected override void OnApplicationStarted()
         {
             AreaRegistration.RegisterAllAreas();
 
