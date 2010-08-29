@@ -1,0 +1,16 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<hibernate-mapping xmlns="urn:nhibernate-mapping-2.2" assembly="Mvc Music Store" namespace="MvcMusicStore.Models">
+  <class name="Genre">
+    <id name="GenreId">
+      <generator class="identity" />
+    </id>
+
+    <property name="Name" />
+    <property name="Description" />
+
+    <set name="Albums">
+      <key column="GenreId" />
+      <one-to-many class="Album" />
+    </set>
+  </class>
+</hibernate-mapping>

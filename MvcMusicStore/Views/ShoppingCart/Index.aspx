@@ -44,7 +44,7 @@
         <% foreach (var item in Model.CartItems) { %>
         <tr id="row-<%: item.RecordId %>">
             <td>
-                <%: Html.ActionLink(item.Album.Title, "Details", "Store", new { id = item.AlbumId }, null)%>
+                <%: Html.ActionLink(item.Album.Title, "Details", "Store", new { id = item.Album.AlbumId }, null)%>
             </td>
             <td>
                 <%: item.Album.Price %>

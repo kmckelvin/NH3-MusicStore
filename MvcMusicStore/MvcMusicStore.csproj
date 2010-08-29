@@ -131,6 +131,12 @@
     <Content Include="Content\Images\shadow_left.jpg" />
     <Content Include="Content\Site.css" />
     <Content Include="Global.asax" />
+    <EmbeddedResource Include="Models\Mappings\Album.hbm.xml" />
+    <EmbeddedResource Include="Models\Mappings\Artist.hbm.xml" />
+    <EmbeddedResource Include="Models\Mappings\Cart.hbm.xml" />
+    <EmbeddedResource Include="Models\Mappings\Genre.hbm.xml" />
+    <EmbeddedResource Include="Models\Mappings\Order.hbm.xml" />
+    <EmbeddedResource Include="Models\Mappings\OrderDetail.hbm.xml" />
     <Content Include="Scripts\jquery-1.4.1-vsdoc.js" />
     <Content Include="Scripts\jquery-1.4.1.js" />
     <Content Include="Scripts\jquery-1.4.1.min.js" />
