@@ -25,13 +25,14 @@ namespace MvcMusicStore.Controllers
             return View(albums);
         }
 
-        private IList<Album> GetTopSellingAlbums(int count)
+        private List<Album> GetTopSellingAlbums(int count)
         {
             // Group the order details by album and return
             // the albums with the highest count
 
-            return storeContext.Albums.ToList()
-                .OrderBy(a => a.OrderDetails.Count())
+            return storeContext.Session.QueryOver<Album>()
+                .Fetch(x => x.OrderDetails).Eager
+                .List<Album>()
                 .Take(count)
                 .ToList();
         }
